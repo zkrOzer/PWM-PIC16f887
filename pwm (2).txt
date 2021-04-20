@@ -1,0 +1,59 @@
+ list p=16f887
+  include<P16f887.inc>
+__CONFIG _CONFIG1, _FOSC_INTRC_NOCLKOUT & _WDTE_OFF & _PWRTE_ON & _MCLRE_ON & _CP_ON & _CPD_OFF & _BOREN_OFF & _IESO_OFF & _FCMEN_OFF & _LVP_OFF	
+
+    ORG 0x00
+    GOTO    MAIN
+
+;******************************************************
+;Main Program Loop
+;******************************************************
+    ORG 0X05
+MAIN
+    CALL    SETUP
+    CALL    SETUP_PWM
+wait
+    BTFSS   PIR1,1	;TEST TR2IF
+    GOTO    wait
+    BSF	    STATUS,5    ;Select Bank1
+    CLRF    TRISC	;START PWM
+    BCF	    STATUS,5    ;Select Bank0
+    BSF	    PORTD,0     ;ENTERING MAIN LOOP
+main_loop
+    GOTO    main_loop
+
+;****************************************************************
+;Setup Subroutine
+;general setup
+;****************************************************************
+SETUP
+    BSF	    STATUS,6    ;SELECT BANK 3
+    BSF	    STATUS,5
+    MOVLW   0X00
+    MOVWF   ANSELH  ;CONFIGURE ALL PINS FOR DIGITAL IO
+    MOVWF   ANSEL  
+    BCF	    STATUS,6    ;SELECT BANK1
+    BSF OSCCON,4    ;OSCILLATOR TO LOW SPEED
+    BSF OSCCON,5
+    BSF OSCCON,6
+    CLRF    TRISD   ;PORTD AS OUTPUT  
+    BCF	    STATUS,5    ;SELECT BANK0
+    RETURN  
+;********************************************************
+;SETUP PWM MODULE 
+;********************************************************
+SETUP_PWM
+    BCF	    STATUS,6    ;SELECT BANK1
+    BSF	    STATUS,5
+    clrf    TRISC	
+    MOVLW   .101	;DEFINE PORT B AS INPUT
+    MOVWF   PR2		;
+    BCF	    STATUS,5    ;SELECT BANK0
+    MOVLW   0X0C	;SET FOR SINGLE OUTPUT ON P1A AND
+    MOVWF   CCP1CON	;
+    MOVLW   .52
+    MOVWF   CCPR1L	;SET HIGH BITS FOR DC=50% (Roughly)
+    movlw   b'0000010'
+    movwf   T2CON
+    RETURN  
+    END
